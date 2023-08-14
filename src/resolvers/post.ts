@@ -1,6 +1,5 @@
 import { Arg, Ctx, Int, Mutation, Query, Resolver } from 'type-graphql';
 import { Post } from '../entities/Post';
-import { MyContext } from 'src/types';
 import { Context } from 'src/context';
 
 @Resolver()
@@ -13,9 +12,9 @@ export class PostResolver {
 	@Query(() => Post, { nullable: true })
 	post( 
 		@Arg("id", () => Int) id: number,
-		@Ctx() { em }: MyContext
+		@Ctx() { prisma }: Context
 	): Promise<Post | null> {
-		return em.findOne(Post, { id });
+		return prisma.post.findUnique({ where: { id } });
 	} 
 
 	@Mutation(() => Post)
@@ -33,13 +32,12 @@ export class PostResolver {
 	async updatePost( 
 		@Arg("id") id: number, 
 		@Arg("title") title: string, 
-		@Ctx() { em }: MyContext
+		@Ctx() { prisma }: Context
 	): Promise<Post | null> {
-		const post = await em.findOne(Post, { id })
-		if(!post || typeof title === "undefined")
-			return null;
-		post.title = title;
-		await em.persistAndFlush(post);
+		const post = await prisma.post.update({ 
+			where: { id },
+			data: { title }
+		});
 		return post;
 	}
 }
