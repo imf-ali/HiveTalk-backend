@@ -7,12 +7,14 @@
     "watch": "tsc -w",
     "dev": "nodemon dist/index.js",
     "start": "node dist/index.js",
-    "start-ts": "ts-node src/index.ts"
+    "start-ts": "ts-node src/index.ts",
+    "create:migration": "prisma migrate dev"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.2",
     "@types/express": "^4.17.17",
     "@types/node": "^20.5.0",
     "nodemon": "^3.0.1",
@@ -27,6 +29,7 @@
     "@mikro-orm/postgresql": "^5.7.14",
     "@prisma/client": "^5.1.1",
     "apollo-server-express": "^3.12.0",
+    "bcryptjs": "^2.4.3",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "graphql": "15.3.0",

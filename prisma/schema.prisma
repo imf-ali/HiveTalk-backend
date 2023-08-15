@@ -16,3 +16,11 @@ model Post {
   updatedAt DateTime @updatedAt
   title     String
 }
+
+model User {
+  id Int @id @default(autoincrement())
+  username String
+  password String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
