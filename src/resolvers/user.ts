@@ -1,5 +1,5 @@
 import { Context } from 'src/context';
-import { Arg, Ctx, Field, InputType, Mutation, ObjectType, Resolver } from 'type-graphql';
+import { Arg, Ctx, Field, InputType, Mutation, ObjectType, Query, Resolver } from 'type-graphql';
 import bcrypt from 'bcryptjs';
 import { User } from '../entities/User';
 
@@ -32,6 +32,11 @@ class UserResponse {
 
 @Resolver()
 export class UserResolver {
+
+  @Query(() => User, { nullable: true })
+  me(@Ctx() { prisma, req } : Context){
+    return prisma.user.findUnique({ where: { id: req.session.userId } })
+  }
 
 	@Mutation(() => UserResponse)
 	async register(
@@ -70,7 +75,7 @@ export class UserResolver {
   @Mutation(() => UserResponse)
 	async login(
     @Arg('options') options: UsernamePasswordInputType,
-    @Ctx() { prisma } : Context
+    @Ctx() { prisma, req } : Context
   ) : Promise<UserResponse> {
 		const user = await prisma.user.findFirst({ where: { username: options.username } });
     if(!user){
@@ -89,6 +94,9 @@ export class UserResolver {
         }]
       }
     }
+    req.session.userId = user.id;
+    console.log(req.session.id);
+    
     return {
       user
     }

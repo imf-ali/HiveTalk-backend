@@ -5,26 +5,51 @@ import { buildSchema } from 'type-graphql';
 import { HelloResolver } from './resolvers/hello';
 import { PostResolver } from './resolvers/post';
 import { UserResolver } from "./resolvers/user";
-import { Context, createContext } from './context'
+import { Context, createContext } from './context';
+import RedisStore from "connect-redis"
+import session from "express-session";
+import { createClient } from "redis";
 
 const main = async () => {
 
   const app = express();
+
+  const redisClient = createClient()
+  redisClient.connect().catch(console.error)
 
   const apolloServer = new ApolloServer<Context>({
     schema: await buildSchema({
       resolvers: [ HelloResolver, PostResolver, UserResolver ],
       validate: false,
     }),
-    context: createContext
+    context: ({ req, res }) => createContext({ req, res })
   });
+
+  app.use(
+    session({
+      name: 'serv',
+      store: new RedisStore({
+        client: redisClient,
+        disableTouch: true
+      }),
+      cookie: {
+        path: '/',
+        maxAge: 1000 * 60 * 60 * 24 * 365 * 10,
+        sameSite: "lax",
+        httpOnly: true 
+      },
+      resave: false, 
+      saveUninitialized: false, 
+      secret: "keyboard cat",
+    })
+  )
   
   await apolloServer.start();
   apolloServer.applyMiddleware({ app });
 
   app.listen(3000, () => console.log(`\
-  🚀 Server ready at: 3000
-`));
+    🚀 Server ready at: 3000
+  `));
 }
 
 main().catch(err => {
