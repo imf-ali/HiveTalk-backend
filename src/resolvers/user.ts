@@ -41,7 +41,7 @@ export class UserResolver {
 	@Mutation(() => UserResponse)
 	async register(
     @Arg('options') options: UsernamePasswordInputType,
-    @Ctx() { prisma } : Context
+    @Ctx() { prisma, req } : Context
   ) : Promise<UserResponse> {
 
     if(options.username.length <= 3){
@@ -67,6 +67,7 @@ export class UserResolver {
         password: await bcrypt.hash(options.password, 8)
       }
     });
+    req.session.userId = user.id;
     return {
       user
     }

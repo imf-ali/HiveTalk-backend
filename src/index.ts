@@ -9,10 +9,12 @@ import { Context, createContext } from './context';
 import RedisStore from "connect-redis"
 import session from "express-session";
 import { createClient } from "redis";
+import cors from "cors";
 
 const main = async () => {
 
   const app = express();
+  app.use(cors());
 
   const redisClient = createClient()
   redisClient.connect().catch(console.error)
@@ -45,10 +47,10 @@ const main = async () => {
   )
   
   await apolloServer.start();
-  apolloServer.applyMiddleware({ app });
+  apolloServer.applyMiddleware({ app, cors: false });
 
-  app.listen(3000, () => console.log(`\
-    🚀 Server ready at: 3000
+  app.listen(4000, () => console.log(`\
+    🚀 Server ready at: 4000
   `));
 }
 
