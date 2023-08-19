@@ -2,6 +2,7 @@ import { Context } from 'src/context';
 import { Arg, Ctx, Field, InputType, Mutation, ObjectType, Query, Resolver } from 'type-graphql';
 import bcrypt from 'bcryptjs';
 import { User } from '../entities/User';
+import { createToken, extractUserId } from '../utils/Auth';
 
 @InputType()
 class UsernamePasswordInputType {
@@ -28,20 +29,44 @@ class UserResponse {
 
   @Field(() => User, { nullable: true })
   user?: User;
+
+  @Field(() => String, { nullable: true })
+  token?: string;
 }
 
 @Resolver()
 export class UserResolver {
 
-  @Query(() => User, { nullable: true })
-  me(@Ctx() { prisma, req } : Context){
-    return prisma.user.findUnique({ where: { id: req.session.userId } })
+  @Query(() => UserResponse, { nullable: true })
+  async me(
+    @Arg('token') token: string,
+    @Ctx() { prisma } : Context
+  ){
+    const user = await prisma.user.findUnique({ 
+      where: { 
+        id: extractUserId(token),
+        tokens: {
+          has: token
+        }
+      } 
+    })
+    if(!user){
+      return {
+        errors: [{
+          field: 'token',
+          message: 'Token is invalid or expired'
+        }]
+      }
+    }
+    return {
+      user
+    }
   }
 
 	@Mutation(() => UserResponse)
 	async register(
     @Arg('options') options: UsernamePasswordInputType,
-    @Ctx() { prisma, req } : Context
+    @Ctx() { prisma } : Context
   ) : Promise<UserResponse> {
 
     if(options.username.length <= 3){
@@ -64,19 +89,26 @@ export class UserResolver {
 		const user =  await prisma.user.create({
       data: {
         username: options.username,
-        password: await bcrypt.hash(options.password, 8)
+        password: await bcrypt.hash(options.password, 8),
       }
     });
-    req.session.userId = user.id;
+    const token = createToken(user.id);
+    await prisma.user.update({ 
+			where: { id: user.id },
+			data: { 
+        tokens: { push: token }, 
+      }
+		});
     return {
-      user
+      user,
+      token
     }
 	}
 
   @Mutation(() => UserResponse)
 	async login(
     @Arg('options') options: UsernamePasswordInputType,
-    @Ctx() { prisma, req } : Context
+    @Ctx() { prisma } : Context
   ) : Promise<UserResponse> {
 		const user = await prisma.user.findFirst({ where: { username: options.username } });
     if(!user){
@@ -87,7 +119,7 @@ export class UserResolver {
         }]
       }
     }
-    if(! await bcrypt.compare(options.password, user.password)){
+    if(!await bcrypt.compare(options.password, user.password)){
       return {
         errors: [{
           field: 'password',
@@ -95,11 +127,16 @@ export class UserResolver {
         }]
       }
     }
-    req.session.userId = user.id;
-    console.log(req.session.id);
-    
+    const token = createToken(user.id);
+    await prisma.user.update({ 
+			where: { id: user.id },
+			data: { 
+        tokens: { push: token }, 
+      }
+		});
     return {
-      user
+      user,
+      token
     }
 	}
 }
