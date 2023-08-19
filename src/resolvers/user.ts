@@ -139,4 +139,42 @@ export class UserResolver {
       token
     }
 	}
+
+  @Mutation(() => UserResponse)
+  async logout(
+    @Arg('token') token: string,
+    @Ctx() { prisma } : Context
+  ){
+    const userId = extractUserId(token);
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+        tokens: {
+          has: token
+        }
+      }
+    })
+    if(!user){
+      return {
+        errors: [{
+          field: 'username',
+          message: 'User Not found!'
+        }]
+      }
+    }
+    const tokensList = user.tokens.filter(tokenData => tokenData !== token);
+    await prisma.user.update({
+      where: {
+        id: userId
+      },
+      data: {
+        tokens: {
+          set: tokensList,
+        }
+      }
+    })
+    return {
+      user
+    }
+  }
 }
