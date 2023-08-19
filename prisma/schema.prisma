@@ -12,16 +12,20 @@ datasource db {
 
 model Post {
   id        Int      @id @default(autoincrement())
+  title     String
+  text      String
+  userId    Int
+  user      User @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  title     String
 }
 
 model User {
-  id Int @id @default(autoincrement())
-  username String
-  password String
-  tokens String[]
+  id        Int @id @default(autoincrement())
+  username  String
+  password  String
+  tokens    String[]
+  posts     Post[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

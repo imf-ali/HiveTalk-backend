@@ -9,10 +9,16 @@ export class Post {
   @PrimaryKey()
   id!: number;
 
-
   @Field()
   @Property({ type: 'text'})
   title!: string;
+
+  @Field()
+  @Property({ type: 'text'})
+  text!: string;
+
+  @Field()
+  userId: number;
 
   @Field(() => String)
   @Property({ type: 'date' })

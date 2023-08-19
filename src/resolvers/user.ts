@@ -96,7 +96,7 @@ export class UserResolver {
     await prisma.user.update({ 
 			where: { id: user.id },
 			data: { 
-        tokens: { push: token }, 
+        tokens: { push: token },
       }
 		});
     return {

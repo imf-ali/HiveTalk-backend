@@ -1,6 +1,19 @@
-import { Arg, Ctx, Int, Mutation, Query, Resolver } from 'type-graphql';
+import { Arg, Ctx, Field, InputType, Int, Mutation, Query, Resolver } from 'type-graphql';
 import { Post } from '../entities/Post';
 import { Context } from 'src/context';
+import { extractUserId } from '../utils/Auth';
+
+@InputType()
+class PostInputType {
+  @Field()
+  title: string;
+
+  @Field()
+  text: string;
+
+	@Field()
+	token: string;
+}
 
 @Resolver()
 export class PostResolver {
@@ -19,11 +32,16 @@ export class PostResolver {
 
 	@Mutation(() => Post)
 	async createPost( 
-		@Arg("title") title: string, 
+		@Arg("input") input: PostInputType, 
 		@Ctx() { prisma }: Context
 	): Promise<Post> {
-		const post = prisma.post.create({ 
-			data: { title }
+		const userId = extractUserId(input.token);
+		const post = await prisma.post.create({ 
+			data: { 
+				title: input.title,
+				text: input.text,
+				userId,
+			}
 		 });
 		return post;
 	}
@@ -34,6 +52,7 @@ export class PostResolver {
 		@Arg("title") title: string, 
 		@Ctx() { prisma }: Context
 	): Promise<Post | null> {
+		// const userId = extractUserId(input.token);
 		const post = await prisma.post.update({ 
 			where: { id },
 			data: { title }
