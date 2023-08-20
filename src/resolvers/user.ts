@@ -86,7 +86,20 @@ export class UserResolver {
         }]
       }
     }
-		const user =  await prisma.user.create({
+    let user = await prisma.user.findUnique({
+      where:{
+        username: options.username
+      }
+    })
+    if(user) {
+      return {
+        errors: [{
+          field: 'Username',
+          message: 'Username already exists'
+        }]
+      }
+    }
+		user = await prisma.user.create({
       data: {
         username: options.username,
         password: await bcrypt.hash(options.password, 8),

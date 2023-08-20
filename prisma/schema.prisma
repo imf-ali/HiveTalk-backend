@@ -16,16 +16,29 @@ model Post {
   text      String
   userId    Int
   user      User @relation(fields: [userId], references: [id])
+  updoots   Updoot[]
+  points    Int @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model User {
   id        Int @id @default(autoincrement())
-  username  String
+  username  String @unique
   password  String
   tokens    String[]
   posts     Post[]
+  updoots   Updoot[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Updoot {
+  value     Int
+  userId    Int
+  user      User  @relation(fields: [userId], references: [id])
+  postId    Int
+  post      Post  @relation(fields: [postId], references: [id])
+
+  @@unique([userId, postId])
 }
