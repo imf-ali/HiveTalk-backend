@@ -21,19 +21,24 @@ These instructions will help you get the backend server up and running on your l
 
     ```bash
     git clone https://github.com/imf-ali/HiveTalk-backend.git
-2. Install the packages 
+
+2. Copy the .env-example file to .env file. JWT_SECRET can be any random string
+
+    ```bash
+    cp .env-example .env
+3. Install the packages 
 
     ```bash
     yarn
-3. Build the project 
+4. Build the project 
 
     ```bash
     yarn build
-4. Apply the migrations to the database schema
+5. Apply the migrations to the database schema
 
     ```bash
     yarn create:migration
-5. Run the project
+6. Run the project
 
     ```bash
     yarn start
