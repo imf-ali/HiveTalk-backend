@@ -175,7 +175,7 @@ export class UserResolver {
         }]
       }
     }
-    const tokensList = user.tokens.filter(tokenData => tokenData !== token);
+    const tokensList = user.tokens.filter((tokenData: string) => tokenData !== token);
     await prisma.user.update({
       where: {
         id: userId
