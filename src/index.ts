@@ -27,11 +27,13 @@ const main = async () => {
   await apolloServer.start();
   apolloServer.applyMiddleware({ app, cors: false });
 
-  const port = process.env.PORT || 4000
+  const port = process.env.PORT || 4000;
 
   app.listen(port, () => console.log(`\
     🚀 Server ready at: ${port}
   `));
+
+  app.get('/app/health', (_,res) => res.send({ status: 'OK' }))
 }
 
 main().catch(err => {
