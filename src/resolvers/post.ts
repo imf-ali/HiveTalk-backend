@@ -46,6 +46,15 @@ class PostResponse {
 }
 
 @ObjectType()
+class PostEachResponse {
+	@Field(() => [PostError], { nullable: true })
+	errors?: PostError[];
+
+	@Field(() => Post, { nullable: true })
+	post?: Post;
+}
+
+@ObjectType()
 class VoteResponse {
 	@Field(() => Int, { nullable: true })
 	points?: number;
@@ -146,17 +155,25 @@ export class PostResolver {
 		return { posts };
 	}
 
-	@Query(() => Post, { nullable: true })
-	async post(
-		@Arg('id', () => Int) id: number,
-		@Ctx() { prisma }: Context,
-	): Promise<Post | null> {
-		return await prisma.post.findUnique({
+	@Query(() => PostEachResponse, { nullable: true })
+	async post(@Arg('id', () => Int) id: number, @Ctx() { prisma }: Context) {
+		const post = await prisma.post.findUnique({
 			where: { id },
 			include: {
 				user: true,
 			},
 		});
+		if (!post) {
+			return {
+				errors: [
+					{
+						field: 'Not Found',
+						message: 'Post not found',
+					},
+				],
+			};
+		}
+		return { post };
 	}
 
 	@Mutation(() => Post)
@@ -178,19 +195,74 @@ export class PostResolver {
 		return post;
 	}
 
-	@Mutation(() => Post)
+	@Mutation(() => PostEachResponse)
 	async updatePost(
 		@Arg('id') id: number,
 		@Arg('title') title: string,
+		@Arg('text') text: string,
+		@Arg('token') token: string,
 		@Ctx() { prisma }: Context,
-	): Promise<Post | null> {
+	) {
+		const userId = extractUserId(token);
+		const user = await prisma.user.findUnique({
+			where: {
+				id: userId,
+				tokens: {
+					has: token,
+				},
+			},
+		});
+		if (!user) {
+			return {
+				errors: [
+					{
+						field: 'User error',
+						message: 'Session expired or user not found',
+					},
+				],
+			};
+		}
 		const post = await prisma.post.update({
 			where: { id },
-			data: { title },
+			data: { title, text },
 			include: {
 				user: true,
 			},
 		});
-		return post;
+		return { post };
+	}
+
+	@Mutation(() => Boolean)
+	async deletePost(
+		@Arg('id') id: number,
+		@Arg('token') token: string,
+		@Ctx() { prisma }: Context,
+	) {
+		const userId = extractUserId(token);
+		const user = await prisma.user.findUnique({
+			where: {
+				id: userId,
+			},
+		});
+		if (!user) return false;
+		const post = await prisma.post.findUnique({
+			where: {
+				id,
+				userId,
+			},
+		});
+		if (!post) return false;
+		await prisma.updoot.deleteMany({
+			where: {
+				postId: id,
+			},
+		});
+		await prisma.post.deleteMany({
+			where: {
+				id: id,
+				userId: userId,
+			},
+		});
+		return true;
 	}
 }
